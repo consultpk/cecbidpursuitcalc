@@ -1,0 +1,636 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bid Pursuit Scorecard</title>
+    <style>
+        body { font-family: Montserrat, sans-serif; max-width: 1200px; margin: auto; padding: 20px; background-color: #D9D9D9; color: #002060; display: grid; grid-template-columns: 2fr 1fr; gap: 40px; }
+        .main-content { grid-column: 1 / 2; }
+        .container { background-color: #fff; padding: 30px; border-radius: 8px; box-shadow: 0 4px 8px rgba(0,0,0,0.1); }
+        h1, h2, h3 { color: #FF6000; }
+        .score-legend { background-color: #D9D9D9; padding: 15px; border-radius: 6px; margin-bottom: 20px; }
+        .score-legend h3 { margin-top: 0; }
+        .score-legend p { margin: 5px 0; color: #002060; font-size: 0.85em; font-style: italic}
+        .question-group { margin-bottom: 25px; border-bottom: 2px solid #0070C0; padding-bottom: 20px; }
+        .question-group:last-of-type { border-bottom: none; }
+        .question h3 { margin-bottom: 10px; font-size: 1.1em; color: #032C82; }
+        .score-options label { margin-right: 15px; font-size: 0.95em; }
+        .deal-killer-checkbox { margin-top: 5px; margin-left: 20px; font-size: 0.9em; color: #FF6000; }
+        .metrics-summary { padding: 20px; background-color: #D9D9D9; border-radius: 6px; }
+        .metrics-summary p { font-size: 1em; margin: 5px 0; color: #002060; }
+        .group-score { font-weight: bold; }
+        #total-score, #pursuit-value { font-weight: bold; font-size: 1.5em; color: #032C82; }
+        #deal-killer-warning { color: #FF6000; font-weight: bold; margin-top: 15px; }
+        #deal-killer-risk-score { font-weight: bold; }
+        #score-1-count, #unk-count { font-weight: bold; }
+        .score-options input[type="radio"]:checked + label {
+            font-weight: bold;
+            color: #032C82;
+        }
+
+        /* Styles for the floating results panel and legend */
+        .results-panel {
+            grid-column: 2 / 3;
+            position: sticky;
+            top: 20px;
+            align-self: flex-start;
+        }
+        .sticky-legend {
+            position: sticky;
+            top: 0;
+            z-index: 10;
+        }
+
+        /* Battery Styles */
+        .battery-container {
+            width: 80px;
+            height: 160px;
+            border: 3px solid #002060;
+            border-radius: 10px;
+            position: relative;
+            margin: 20px auto 10px auto;
+            display: flex;
+            justify-content: center;
+            align-items: flex-end;
+            overflow: hidden;
+            box-shadow: inset 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+        .battery-container::before {
+            content: '';
+            width: 30px;
+            height: 8px;
+            background-color: #002060;
+            position: absolute;
+            top: -11px;
+            border-radius: 2px;
+        }
+        .battery-fill {
+            width: 100%;
+            height: 0%;
+            transition: height 0.5s ease-in-out, background-color 0.5s ease-in-out;
+            position: relative;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-weight: bold;
+            font-size: 1.2em;
+            text-shadow: 1px 1px 2px rgba(0,0,0,0.3);
+        }
+        .percentage-text {
+            color: white; /* Default text color for the fill */
+            font-weight: bold;
+            font-size: 1.2em;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="main-content">
+        <div class="container">
+            <h1>CEC Bid Pursuit Scorecard</h1>
+
+            <div class="score-legend sticky-legend">
+                <h3>Legend</h3>
+                <p><strong>5:</strong> Strong competitive advantage</p>
+                <p><strong>4:</strong> Moderate competitive advantage</p>
+                <p><strong>3:</strong> Neutral (neither helps nor hurts)</p>
+                <p><strong>2:</strong> Moderate competitive disadvantage</p>
+                <p><strong>1:</strong> Serious competitive disadvantage</p>
+                <p><strong>Unk:</strong> Unknown</p>
+            </div>
+
+            <form id="scorecardForm">
+                <h2>Prospect Information (12 questions)</h2>
+                <div class="question-group" id="prospect-info">
+                    <div class="question">
+                        <h3>1. Do we know (and can we influence) the key decision makers?</h3>
+                        <div class="score-options">
+                            <input type="radio" name="q1_score" value="5" required><label>5</label>
+                            <input type="radio" name="q1_score" value="4" required><label>4</label>
+                            <input type="radio" name="q1_score" value="3" required><label>3</label>
+                            <input type="radio" name="q1_score" value="2" required><label>2</label>
+                            <input type="radio" name="q1_score" value="1" required><label>1</label>
+                            <input type="radio" name="q1_score" value="0" required><label>Unk</label>
+                            <span class="deal-killer-checkbox">
+                                <input type="checkbox" name="q1_killer" value="yes"> Potential Deal Killer?
+                            </span>
+                        </div>
+                    </div>
+                    <div class="question">
+                        <h3>2. Is this opportunity aligned with the prospect's business strategy?</h3>
+                        <div class="score-options">
+                            <input type="radio" name="q2_score" value="5" required><label>5</label>
+                            <input type="radio" name="q2_score" value="4" required><label>4</label>
+                            <input type="radio" name="q2_score" value="3" required><label>3</label>
+                            <input type="radio" name="q2_score" value="2" required><label>2</label>
+                            <input type="radio" name="q2_score" value="1" required><label>1</label>
+                            <input type="radio" name="q2_score" value="0" required><label>Unk</label>
+                            <span class="deal-killer-checkbox">
+                                <input type="checkbox" name="q2_killer" value="yes"> Potential Deal Killer?
+                            </span>
+                        </div>
+                    </div>
+                    <div class="question">
+                        <h3>3. Has the budget been formally approved and funded?</h3>
+                        <div class="score-options">
+                            <input type="radio" name="q3_score" value="5" required><label>5</label>
+                            <input type="radio" name="q3_score" value="4" required><label>4</label>
+                            <input type="radio" name="q3_score" value="3" required><label>3</label>
+                            <input type="radio" name="q3_score" value="2" required><label>2</label>
+                            <input type="radio" name="q3_score" value="1" required><label>1</label>
+                            <input type="radio" name="q3_score" value="0" required><label>Unk</label>
+                            <span class="deal-killer-checkbox">
+                                <input type="checkbox" name="q3_killer" value="yes"> Potential Deal Killer?
+                            </span>
+                        </div>
+                    </div>
+                    <div class="question">
+                        <h3>4. Do we understand the business need or pain driving this bid?</h3>
+                        <div class="score-options">
+                            <input type="radio" name="q4_score" value="5" required><label>5</label>
+                            <input type="radio" name="q4_score" value="4" required><label>4</label>
+                            <input type="radio" name="q4_score" value="3" required><label>3</label>
+                            <input type="radio" name="q4_score" value="2" required><label>2</label>
+                            <input type="radio" name="q4_score" value="1" required><label>1</label>
+                            <input type="radio" name="q4_score" value="0" required><label>Unk</label>
+                            <span class="deal-killer-checkbox">
+                                <input type="checkbox" name="q4_killer" value="yes"> Potential Deal Killer?
+                            </span>
+                        </div>
+                    </div>
+                    <div class="question">
+                        <h3>5. Are requirements clearly defined, and are they technically feasible?</h3>
+                        <div class="score-options">
+                            <input type="radio" name="q5_score" value="5" required><label>5</label>
+                            <input type="radio" name="q5_score" value="4" required><label>4</label>
+                            <input type="radio" name="q5_score" value="3" required><label>3</label>
+                            <input type="radio" name="q5_score" value="2" required><label>2</label>
+                            <input type="radio" name="q5_score" value="1" required><label>1</label>
+                            <input type="radio" name="q5_score" value="0" required><label>Unk</label>
+                            <span class="deal-killer-checkbox">
+                                <input type="checkbox" name="q5_killer" value="yes"> Potential Deal Killer?
+                            </span>
+                        </div>
+                    </div>
+                    <div class="question">
+                        <h3>6. Do we know the evaluation criteria and how it will be weighted?</h3>
+                        <div class="score-options">
+                            <input type="radio" name="q6_score" value="5" required><label>5</label>
+                            <input type="radio" name="q6_score" value="4" required><label>4</label>
+                            <input type="radio" name="q6_score" value="3" required><label>3</label>
+                            <input type="radio" name="q6_score" value="2" required><label>2</label>
+                            <input type="radio" name="q6_score" value="1" required><label>1</label>
+                            <input type="radio" name="q6_score" value="0" required><label>Unk</label>
+                            <span class="deal-killer-checkbox">
+                                <input type="checkbox" name="q6_killer" value="yes"> Potential Deal Killer?
+                            </span>
+                        </div>
+                    </div>
+                    <div class="question">
+                        <h3>7. Are there serious business/technical/financial issues behind the scene?</h3>
+                        <div class="score-options">
+                            <input type="radio" name="q7_score" value="5" required><label>5</label>
+                            <input type="radio" name="q7_score" value="4" required><label>4</label>
+                            <input type="radio" name="q7_score" value="3" required><label>3</label>
+                            <input type="radio" name="q7_score" value="2" required><label>2</label>
+                            <input type="radio" name="q7_score" value="1" required><label>1</label>
+                            <input type="radio" name="q7_score" value="0" required><label>Unk</label>
+                            <span class="deal-killer-checkbox">
+                                <input type="checkbox" name="q7_killer" value="yes"> Potential Deal Killer?
+                            </span>
+                        </div>
+                    </div>
+                    <div class="question">
+                        <h3>8. Do we know the proposal time frame, and is it realistic?</h3>
+                        <div class="score-options">
+                            <input type="radio" name="q8_score" value="5" required><label>5</label>
+                            <input type="radio" name="q8_score" value="4" required><label>4</label>
+                            <input type="radio" name="q8_score" value="3" required><label>3</label>
+                            <input type="radio" name="q8_score" value="2" required><label>2</label>
+                            <input type="radio" name="q8_score" value="1" required><label>1</label>
+                            <input type="radio" name="q8_score" value="0" required><label>Unk</label>
+                            <span class="deal-killer-checkbox">
+                                <input type="checkbox" name="q8_killer" value="yes"> Potential Deal Killer?
+                            </span>
+                        </div>
+                    </div>
+                    <div class="question">
+                        <h3>9. Has the prospect already made a "buy or build" decision?</h3>
+                        <div class="score-options">
+                            <input type="radio" name="q9_score" value="5" required><label>5</label>
+                            <input type="radio" name="q9_score" value="4" required><label>4</label>
+                            <input type="radio" name="q9_score" value="3" required><label>3</label>
+                            <input type="radio" name="q9_score" value="2" required><label>2</label>
+                            <input type="radio" name="q9_score" value="1" required><label>1</label>
+                            <input type="radio" name="q9_score" value="0" required><label>Unk</label>
+                            <span class="deal-killer-checkbox">
+                                <input type="checkbox" name="q9_killer" value="yes"> Potential Deal Killer?
+                            </span>
+                        </div>
+                    </div>
+                    <div class="question">
+                        <h3>10. Is low price a major factor in selecting the winning bid?</h3>
+                        <div class="score-options">
+                            <input type="radio" name="q10_score" value="5" required><label>5</label>
+                            <input type="radio" name="q10_score" value="4" required><label>4</label>
+                            <input type="radio" name="q10_score" value="3" required><label>3</label>
+                            <input type="radio" name="q10_score" value="2" required><label>2</label>
+                            <input type="radio" name="q10_score" value="1" required><label>1</label>
+                            <input type="radio" name="q10_score" value="0" required><label>Unk</label>
+                            <span class="deal-killer-checkbox">
+                                <input type="checkbox" name="q10_killer" value="yes"> Potential Deal Killer?
+                            </span>
+                        </div>
+                    </div>
+                    <div class="question">
+                        <h3>11. Are there penalties for not delivering on time or within budget?</h3>
+                        <div class="score-options">
+                            <input type="radio" name="q11_score" value="5" required><label>5</label>
+                            <input type="radio" name="q11_score" value="4" required><label>4</label>
+                            <input type="radio" name="q11_score" value="3" required><label>3</label>
+                            <input type="radio" name="q11_score" value="2" required><label>2</label>
+                            <input type="radio" name="q11_score" value="1" required><label>1</label>
+                            <input type="radio" name="q11_score" value="0" required><label>Unk</label>
+                            <span class="deal-killer-checkbox">
+                                <input type="checkbox" name="q11_killer" value="yes"> Potential Deal Killer?
+                            </span>
+                        </div>
+                    </div>
+                    <div class="question">
+                        <h3>12. Are the contract terms and conditions acceptable to us?</h3>
+                        <div class="score-options">
+                            <input type="radio" name="q12_score" value="5" required><label>5</label>
+                            <input type="radio" name="q12_score" value="4" required><label>4</label>
+                            <input type="radio" name="q12_score" value="3" required><label>3</label>
+                            <input type="radio" name="q12_score" value="2" required><label>2</label>
+                            <input type="radio" name="q12_score" value="1" required><label>1</label>
+                            <input type="radio" name="q12_score" value="0" required><label>Unk</label>
+                            <span class="deal-killer-checkbox">
+                                <input type="checkbox" name="q12_killer" value="yes"> Potential Deal Killer?
+                            </span>
+                        </div>
+                    </div>
+                </div>
+
+                <h2>Internal Information (15 questions)</h2>
+                <div class="question-group" id="internal-info">
+                    <div class="question">
+                        <h3>13. Is this opportunity in sync with our own strategic direction?</h3>
+                        <div class="score-options">
+                            <input type="radio" name="q13_score" value="5" required><label>5</label>
+                            <input type="radio" name="q13_score" value="4" required><label>4</label>
+                            <input type="radio" name="q13_score" value="3" required><label>3</label>
+                            <input type="radio" name="q13_score" value="2" required><label>2</label>
+                            <input type="radio" name="q13_score" value="1" required><label>1</label>
+                            <input type="radio" name="q13_score" value="0" required><label>Unk</label>
+                            <span class="deal-killer-checkbox">
+                                <input type="checkbox" name="q13_killer" value="yes"> Potential Deal Killer?
+                            </span>
+                        </div>
+                    </div>
+                    <div class="question">
+                        <h3>14. Do we have strong management support and sponsorship?</h3>
+                        <div class="score-options">
+                            <input type="radio" name="q14_score" value="5" required><label>5</label>
+                            <input type="radio" name="q14_score" value="4" required><label>4</label>
+                            <input type="radio" name="q14_score" value="3" required><label>3</label>
+                            <input type="radio" name="q14_score" value="2" required><label>2</label>
+                            <input type="radio" name="q14_score" value="1" required><label>1</label>
+                            <input type="radio" name="q14_score" value="0" required><label>Unk</label>
+                            <span class="deal-killer-checkbox">
+                                <input type="checkbox" name="q14_killer" value="yes"> Potential Deal Killer?
+                            </span>
+                        </div>
+                    </div>
+                    <div class="question">
+                        <h3>15. Do we have the resources, talent, and will to win this opportunity?</h3>
+                        <div class="score-options">
+                            <input type="radio" name="q15_score" value="5" required><label>5</label>
+                            <input type="radio" name="q15_score" value="4" required><label>4</label>
+                            <input type="radio" name="q15_score" value="3" required><label>3</label>
+                            <input type="radio" name="q15_score" value="2" required><label>2</label>
+                            <input type="radio" name="q15_score" value="1" required><label>1</label>
+                            <input type="radio" name="q15_score" value="0" required><label>Unk</label>
+                            <span class="deal-killer-checkbox">
+                                <input type="checkbox" name="q15_killer" value="yes"> Potential Deal Killer?
+                            </span>
+                        </div>
+                    </div>
+                    <div class="question">
+                        <h3>16. Do we have the resources and ability to deliver, if we win?</h3>
+                        <div class="score-options">
+                            <input type="radio" name="q16_score" value="5" required><label>5</label>
+                            <input type="radio" name="q16_score" value="4" required><label>4</label>
+                            <input type="radio" name="q16_score" value="3" required><label>3</label>
+                            <input type="radio" name="q16_score" value="2" required><label>2</label>
+                            <input type="radio" name="q16_score" value="1" required><label>1</label>
+                            <input type="radio" name="q16_score" value="0" required><label>Unk</label>
+                            <span class="deal-killer-checkbox">
+                                <input type="checkbox" name="q16_killer" value="yes"> Potential Deal Killer?
+                            </span>
+                        </div>
+                    </div>
+                    <div class="question">
+                        <h3>17. Can we realistically manage the risks, if we win?</h3>
+                        <div class="score-options">
+                            <input type="radio" name="q17_score" value="5" required><label>5</label>
+                            <input type="radio" name="q17_score" value="4" required><label>4</label>
+                            <input type="radio" name="q17_score" value="3" required><label>3</label>
+                            <input type="radio" name="q17_score" value="2" required><label>2</label>
+                            <input type="radio" name="q17_score" value="1" required><label>1</label>
+                            <input type="radio" name="q17_score" value="0" required><label>Unk</label>
+                            <span class="deal-killer-checkbox">
+                                <input type="checkbox" name="q17_killer" value="yes"> Potential Deal Killer?
+                            </span>
+                        </div>
+                    </div>
+                    <div class="question">
+                        <h3>18. If additional resources are needed, can we get what we need?</h3>
+                        <div class="score-options">
+                            <input type="radio" name="q18_score" value="5" required><label>5</label>
+                            <input type="radio" name="q18_score" value="4" required><label>4</label>
+                            <input type="radio" name="q18_score" value="3" required><label>3</label>
+                            <input type="radio" name="q18_score" value="2" required><label>2</label>
+                            <input type="radio" name="q18_score" value="1" required><label>1</label>
+                            <input type="radio" name="q18_score" value="0" required><label>Unk</label>
+                            <span class="deal-killer-checkbox">
+                                <input type="checkbox" name="q18_killer" value="yes"> Potential Deal Killer?
+                            </span>
+                        </div>
+                    </div>
+                    <div class="question">
+                        <h3>19. How well are we known within this business sector?</h3>
+                        <div class="score-options">
+                            <input type="radio" name="q19_score" value="5" required><label>5</label>
+                            <input type="radio" name="q19_score" value="4" required><label>4</label>
+                            <input type="radio" name="q19_score" value="3" required><label>3</label>
+                            <input type="radio" name="q19_score" value="2" required><label>2</label>
+                            <input type="radio" name="q19_score" value="1" required><label>1</label>
+                            <input type="radio" name="q19_score" value="0" required><label>Unk</label>
+                            <span class="deal-killer-checkbox">
+                                <input type="checkbox" name="q19_killer" value="yes"> Potential Deal Killer?
+                            </span>
+                        </div>
+                    </div>
+                    <div class="question">
+                        <h3>20. Do we have a successful track record with similar opportunities?</h3>
+                        <div class="score-options">
+                            <input type="radio" name="q20_score" value="5" required><label>5</label>
+                            <input type="radio" name="q20_score" value="4" required><label>4</label>
+                            <input type="radio" name="q20_score" value="3" required><label>3</label>
+                            <input type="radio" name="q20_score" value="2" required><label>2</label>
+                            <input type="radio" name="q20_score" value="1" required><label>1</label>
+                            <input type="radio" name="q20_score" value="0" required><label>Unk</label>
+                            <span class="deal-killer-checkbox">
+                                <input type="checkbox" name="q20_killer" value="yes"> Potential Deal Killer?
+                            </span>
+                        </div>
+                    </div>
+                    <div class="question">
+                        <h3>21. Do we have a relationship with this prospect, and is it favorable?</h3>
+                        <div class="score-options">
+                            <input type="radio" name="q21_score" value="5" required><label>5</label>
+                            <input type="radio" name="q21_score" value="4" required><label>4</label>
+                            <input type="radio" name="q21_score" value="3" required><label>3</label>
+                            <input type="radio" name="q21_score" value="2" required><label>2</label>
+                            <input type="radio" name="q21_score" value="1" required><label>1</label>
+                            <input type="radio" name="q21_score" value="0" required><label>Unk</label>
+                            <span class="deal-killer-checkbox">
+                                <input type="checkbox" name="q21_killer" value="yes"> Potential Deal Killer?
+                            </span>
+                        </div>
+                    </div>
+                    <div class="question">
+                        <h3>22. Are partners needed, and if so, will they complicate our situation?</h3>
+                        <div class="score-options">
+                            <input type="radio" name="q22_score" value="5" required><label>5</label>
+                            <input type="radio" name="q22_score" value="4" required><label>4</label>
+                            <input type="radio" name="q22_score" value="3" required><label>3</label>
+                            <input type="radio" name="q22_score" value="2" required><label>2</label>
+                            <input type="radio" name="q22_score" value="1" required><label>1</label>
+                            <input type="radio" name="q22_score" value="0" required><label>Unk</label>
+                            <span class="deal-killer-checkbox">
+                                <input type="checkbox" name="q22_killer" value="yes"> Potential Deal Killer?
+                            </span>
+                        </div>
+                    </div>
+                    <div class="question">
+                        <h3>23. Do we have differentiators that improve our odds of winning?</h3>
+                        <div class="score-options">
+                            <input type="radio" name="q23_score" value="5" required><label>5</label>
+                            <input type="radio" name="q23_score" value="4" required><label>4</label>
+                            <input type="radio" name="q23_score" value="3" required><label>3</label>
+                            <input type="radio" name="q23_score" value="2" required><label>2</label>
+                            <input type="radio" name="q23_score" value="1" required><label>1</label>
+                            <input type="radio" name="q23_score" value="0" required><label>Unk</label>
+                            <span class="deal-killer-checkbox">
+                                <input type="checkbox" name="q23_killer" value="yes"> Potential Deal Killer?
+                            </span>
+                        </div>
+                    </div>
+                    <div class="question">
+                        <h3>24. Can we afford the investment needed to pursue this opportunity?</h3>
+                        <div class="score-options">
+                            <input type="radio" name="q24_score" value="5" required><label>5</label>
+                            <input type="radio" name="q24_score" value="4" required><label>4</label>
+                            <input type="radio" name="q24_score" value="3" required><label>3</label>
+                            <input type="radio" name="q24_score" value="2" required><label>2</label>
+                            <input type="radio" name="q24_score" value="1" required><label>1</label>
+                            <input type="radio" name="q24_score" value="0" required><label>Unk</label>
+                            <span class="deal-killer-checkbox">
+                                <input type="checkbox" name="q24_killer" value="yes"> Potential Deal Killer?
+                            </span>
+                        </div>
+                    </div>
+                    <div class="question">
+                        <h3>25. Will winning put any of our existing business at risk?</h3>
+                        <div class="score-options">
+                            <input type="radio" name="q25_score" value="5" required><label>5</label>
+                            <input type="radio" name="q25_score" value="4" required><label>4</label>
+                            <input type="radio" name="q25_score" value="3" required><label>3</label>
+                            <input type="radio" name="q25_score" value="2" required><label>2</label>
+                            <input type="radio" name="q25_score" value="1" required><label>1</label>
+                            <input type="radio" name="q25_score" value="0" required><label>Unk</label>
+                            <span class="deal-killer-checkbox">
+                                <input type="checkbox" name="q25_killer" value="yes"> Potential Deal Killer?
+                            </span>
+                        </div>
+                    </div>
+                    <div class="question">
+                        <h3>26. Can we contractually protect our intellectual property?</h3>
+                        <div class="score-options">
+                            <input type="radio" name="q26_score" value="5" required><label>5</label>
+                            <input type="radio" name="q26_score" value="4" required><label>4</label>
+                            <input type="radio" name="q26_score" value="3" required><label>3</label>
+                            <input type="radio" name="q26_score" value="2" required><label>2</label>
+                            <input type="radio" name="q26_score" value="1" required><label>1</label>
+                            <input type="radio" name="q26_score" value="0" required><label>Unk</label>
+                            <span class="deal-killer-checkbox">
+                                <input type="checkbox" name="q26_killer" value="yes"> Potential Deal Killer?
+                            </span>
+                        </div>
+                    </div>
+                    <div class="question">
+                        <h3>27. Are there consequences to us of losing or not bidding?</h3>
+                        <div class="score-options">
+                            <input type="radio" name="q27_score" value="5" required><label>5</label>
+                            <input type="radio" name="q27_score" value="4" required><label>4</label>
+                            <input type="radio" name="q27_score" value="3" required><label>3</label>
+                            <input type="radio" name="q27_score" value="2" required><label>2</label>
+                            <input type="radio" name="q27_score" value="1" required><label>1</label>
+                            <input type="radio" name="q27_score" value="0" required><label>Unk</label>
+                            <span class="deal-killer-checkbox">
+                                <input type="checkbox" name="q27_killer" value="yes"> Potential Deal Killer?
+                            </span>
+                        </div>
+                    </div>
+                </div>
+
+                <h2>Market/Competitive Information (8 questions)</h2>
+                <div class="question-group" id="market-info">
+                    <div class="question">
+                        <h3>28. Do we know who the other competitive bidders are, if any?</h3>
+                        <div class="score-options">
+                            <input type="radio" name="q28_score" value="5" required><label>5</label>
+                            <input type="radio" name="q28_score" value="4" required><label>4</label>
+                            <input type="radio" name="q28_score" value="3" required><label>3</label>
+                            <input type="radio" name="q28_score" value="2" required><label>2</label>
+                            <input type="radio" name="q28_score" value="1" required><label>1</label>
+                            <input type="radio" name="q28_score" value="0" required><label>Unk</label>
+                            <span class="deal-killer-checkbox">
+                                <input type="checkbox" name="q28_killer" value="yes"> Potential Deal Killer?
+                            </span>
+                        </div>
+                    </div>
+                    <div class="question">
+                        <h3>29. Is a competitor an incumbent, and does that pose a threat?</h3>
+                        <div class="score-options">
+                            <input type="radio" name="q29_score" value="5" required><label>5</label>
+                            <input type="radio" name="q29_score" value="4" required><label>4</label>
+                            <input type="radio" name="q29_score" value="3" required><label>3</label>
+                            <input type="radio" name="q29_score" value="2" required><label>2</label>
+                            <input type="radio" name="q29_score" value="1" required><label>1</label>
+                            <input type="radio" name="q29_score" value="0" required><label>Unk</label>
+                            <span class="deal-killer-checkbox">
+                                <input type="checkbox" name="q29_killer" value="yes"> Potential Deal Killer?
+                            </span>
+                        </div>
+                    </div>
+                    <div class="question">
+                        <h3>30. Is a competitor favored by prospect decision makers or influencers?</h3>
+                        <div class="score-options">
+                            <input type="radio" name="q30_score" value="5" required><label>5</label>
+                            <input type="radio" name="q30_score" value="4" required><label>4</label>
+                            <input type="radio" name="q30_score" value="3" required><label>3</label>
+                            <input type="radio" name="q30_score" value="2" required><label>2</label>
+                            <input type="radio" name="q30_score" value="1" required><label>1</label>
+                            <input type="radio" name="q30_score" value="0" required><label>Unk</label>
+                            <span class="deal-killer-checkbox">
+                                <input type="checkbox" name="q30_killer" value="yes"> Potential Deal Killer?
+                            </span>
+                        </div>
+                    </div>
+                    <div class="question">
+                        <h3>31. Are we at a distinct competitive disadvantage from the start?</h3>
+                        <div class="score-options">
+                            <input type="radio" name="q31_score" value="5" required><label>5</label>
+                            <input type="radio" name="q31_score" value="4" required><label>4</label>
+                            <input type="radio" name="q31_score" value="3" required><label>3</label>
+                            <input type="radio" name="q31_score" value="2" required><label>2</label>
+                            <input type="radio" name="q31_score" value="1" required><label>1</label>
+                            <input type="radio" name="q31_score" value="0" required><label>Unk</label>
+                            <span class="deal-killer-checkbox">
+                                <input type="checkbox" name="q31_killer" value="yes"> Potential Deal Killer?
+                            </span>
+                        </div>
+                    </div>
+                    <div class="question">
+                        <h3>32. Does this solution involve new or unproven technologies?</h3>
+                        <div class="score-options">
+                            <input type="radio" name="q32_score" value="5" required><label>5</label>
+                            <input type="radio" name="q32_score" value="4" required><label>4</label>
+                            <input type="radio" name="q32_score" value="3" required><label>3</label>
+                            <input type="radio" name="q32_score" value="2" required><label>2</label>
+                            <input type="radio" name="q32_score" value="1" required><label>1</label>
+                            <input type="radio" name="q32_score" value="0" required><label>Unk</label>
+                            <span class="deal-killer-checkbox">
+                                <input type="checkbox" name="q32_killer" value="yes"> Potential Deal Killer?
+                            </span>
+                        </div>
+                    </div>
+                    <div class="question">
+                        <h3>33. Will winning enhance our reputation and market positioning?</h3>
+                        <div class="score-options">
+                            <input type="radio" name="q33_score" value="5" required><label>5</label>
+                            <input type="radio" name="q33_score" value="4" required><label>4</label>
+                            <input type="radio" name="q33_score" value="3" required><label>3</label>
+                            <input type="radio" name="q33_score" value="2" required><label>2</label>
+                            <input type="radio" name="q33_score" value="1" required><label>1</label>
+                            <input type="radio" name="q33_score" value="0" required><label>Unk</label>
+                            <span class="deal-killer-checkbox">
+                                <input type="checkbox" name="q33_killer" value="yes"> Potential Deal Killer?
+                            </span>
+                        </div>
+                    </div>
+                    <div class="question">
+                        <h3>34. Will winning open up new market opportunities for us?</h3>
+                        <div class="score-options">
+                            <input type="radio" name="q34_score" value="5" required><label>5</label>
+                            <input type="radio" name="q34_score" value="4" required><label>4</label>
+                            <input type="radio" name="q34_score" value="3" required><label>3</label>
+                            <input type="radio" name="q34_score" value="2" required><label>2</label>
+                            <input type="radio" name="q34_score" value="1" required><label>1</label>
+                            <input type="radio" name="q34_score" value="0" required><label>Unk</label>
+                            <span class="deal-killer-checkbox">
+                                <input type="checkbox" name="q34_killer" value="yes"> Potential Deal Killer?
+                            </span>
+                        </div>
+                    </div>
+                    <div class="question">
+                        <h3>35. Will winning give us an advantage over our competitors?</h3>
+                        <div class="score-options">
+                            <input type="radio" name="q35_score" value="5" required><label>5</label>
+                            <input type="radio" name="q35_score" value="4" required><label>4</label>
+                            <input type="radio" name="q35_score" value="3" required><label>3</label>
+                            <input type="radio" name="q35_score" value="2" required><label>2</label>
+                            <input type="radio" name="q35_score" value="1" required><label>1</label>
+                            <input type="radio" name="q35_score" value="0" required><label>Unk</label>
+                            <span class="deal-killer-checkbox">
+                                <input type="checkbox" name="q35_killer" value="yes"> Potential Deal Killer?
+                            </span>
+                        </div>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+    <div class="results-panel">
+        <div class="metrics-summary">
+            <h2>Scorecard Results</h2>
+            <p><strong>Overall:</strong></p>
+            <div class="battery-container">
+                <div class="battery-fill" id="battery-fill">
+                    <span class="percentage-text" id="pursuit-value-text">0%</span>
+                </div>
+            </div>
+            <p>Total Score: <span id="total-score">0</span> / 175</p>
+            <p>Potential Deal Killers: <span id="deal-killer-count">0</span> (<span id="deal-killer-risk-score">0%</span>)</p>
+            <div id="deal-killer-warning" style="display:none;">
+                <p>⚠️ **Warning:** At least one "Potential Deal Killer" has been identified. Proceed with caution.</p>
+            </div>
+            <hr style="border-top: 2px solid #0070C0; margin: 15px 0;">
+            <h3>Group Scores:</h3>
+            <p><strong>Prospect Info:</strong> <span id="prospect-score">0</span> / 60</p>
+            <p><strong>Internal Info:</strong> <span id="internal-score">0</span> / 75</p>
+            <p><strong>Market/Competitive Info:</strong> <span id="market-score">0</span> / 40</p>
+            <hr style="border-top: 2px solid #0070C0; margin: 15px 0;">
+            <p>Count of scores rated 1: <span id="score-1-count">0</span></p>
+            <p>Count of "Unk" ratings: <span id="unk-count">0</span></p>
+        </div>
+    </div>
+
+    <script src="cecbidpursuitcalc.js"></script>
+
+</body>
+</html>
