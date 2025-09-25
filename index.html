@@ -1,122 +1,177 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Bid Pursuit Scorecard</title>
-    <style>
-        body { font-family: Montserrat, sans-serif; max-width: 1200px; margin: auto; padding: 20px; background-color: #D9D9D9; color: #002060; display: grid; grid-template-columns: 2fr 1fr; gap: 40px; }
-        .main-content { grid-column: 1 / 2; }
-        .container { background-color: #fff; padding: 30px; border-radius: 8px; box-shadow: 0 4px 8px rgba(0,0,0,0.1); }
-        h1, h2, h3 { color: #FF6000; }
-        .score-legend { background-color: #D9D9D9; padding: 15px; border-radius: 6px; margin-bottom: 20px; }
-        .score-legend h3 { margin-top: 0; }
-        .score-legend p { margin: 5px 0; color: #002060; font-size: 0.85em; font-style: italic}
-        .question-group { margin-bottom: 25px; border-bottom: 2px solid #0070C0; padding-bottom: 20px; }
-        .question-group:last-of-type { border-bottom: none; }
-        .question h3 { margin-bottom: 10px; font-size: 1.1em; color: #032C82; }
-        .score-options label { margin-right: 15px; font-size: 0.95em; }
-        .deal-killer-checkbox { margin-top: 5px; margin-left: 20px; font-size: 0.9em; color: #FF6000; }
-        .metrics-summary { padding: 20px; background-color: #D9D9D9; border-radius: 6px; }
-        .metrics-summary p { font-size: 1em; margin: 5px 0; color: #002060; }
-        .group-score { font-weight: bold; }
-        #total-score, #pursuit-value { font-weight: bold; font-size: 1.5em; color: #032C82; }
-        #deal-killer-warning { color: #FF6000; font-weight: bold; margin-top: 15px; }
-        #deal-killer-risk-score { font-weight: bold; }
-        #score-1-count, #unk-count { font-weight: bold; }
-        .score-options input[type="radio"]:checked + label {
-            font-weight: bold;
-            color: #032C82;
-        }
-
-        /* Styles for the floating results panel and legend */
-        .results-panel {
-            grid-column: 2 / 3;
-            position: sticky;
-            top: 20px;
-            align-self: flex-start;
-        }
-        .sticky-legend {
-            position: sticky;
-            top: 0;
-            z-index: 10;
-        }
-
-        /* Battery Styles */
-        .battery-container {
-            width: 80px;
-            height: 160px;
-            border: 3px solid #002060;
-            border-radius: 10px;
-            position: relative;
-            margin: 20px auto 10px auto;
-            display: flex;
-            justify-content: center;
-            align-items: flex-end;
-            overflow: hidden;
-            box-shadow: inset 0 0 10px rgba(0, 0, 0, 0.1);
-        }
-        .battery-container::before {
-            content: '';
-            width: 30px;
-            height: 8px;
-            background-color: #002060;
-            position: absolute;
-            top: -11px;
-            border-radius: 2px;
-        }
-        .battery-fill {
-            width: 100%;
-            height: 0%;
-            transition: height 0.5s ease-in-out, background-color 0.5s ease-in-out;
-            position: relative;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            font-weight: bold;
-            font-size: 1.2em;
-            text-shadow: 1px 1px 2px rgba(0,0,0,0.3);
-        }
-        .percentage-text {
-            color: white; /* Default text color for the fill */
-            font-weight: bold;
-            font-size: 1.2em;
-        }
-    </style>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>CEC Bid Pursuit Scorecard</title>
+  <style>
+    body {
+      font-family: Montserrat, sans-serif;
+      max-width: 1200px;
+      margin: auto;
+      padding: 20px;
+      background-color: #D9D9D9;
+      color: #002060;
+      display: grid;
+      grid-template-columns: 2fr 1fr;
+      gap: 40px;
+    }
+    .container {
+      background: #fff;
+      padding: 30px;
+      border-radius: 8px;
+      box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+    }
+    h1, h2, h3 {
+      color: #FF6000;
+    }
+    .score-legend {
+      background: #D9D9D9;
+      padding: 15px;
+      border-radius: 6px;
+      margin-bottom: 20px;
+      position: sticky;
+      top: 20px;
+      z-index: 1000;
+/* Make sure it's not taller than the viewport */
+      max-height: calc(100vh - 40px);
+      overflow-y: auto;
+    }
+    .score-legend h3 { margin-top: 0; }
+    .score-legend p {
+      margin: 5px 0;
+      color: #0070C0;
+      font-size: 0.85em;
+      font-style: italic;
+    }
+    .question-group {
+      margin-bottom: 25px;
+      border-bottom: 2px solid #0070C0;
+      padding-bottom: 20px;
+    }
+    .question-group:last-of-type {
+      border-bottom: none;
+    }
+    .question h3 {
+      margin-bottom: 10px;
+      font-size: 1.1em;
+      color: #032C82;
+    }
+    .score-options label {
+      margin-right: 15px;
+      font-size: 0.95em;
+      cursor: pointer;
+    }
+    .deal-killer-checkbox {
+      margin-top: 5px;
+      margin-left: 20px;
+      font-size: 0.9em;
+      color: #FF6000;
+      cursor: pointer;
+    }
+    .metrics-summary {
+      padding: 20px;
+      background-color: #D9D9D9;
+      border-radius: 6px;
+    }
+    .metrics-summary p {
+      font-size: 1em;
+      margin: 5px 0;
+      color: #002060;
+    }
+    #total-score, #deal-killer-risk-score, #score-1-count, #unk-count, #prospect-score, #internal-score, #market-score {
+      font-weight: bold;
+      color: #032C82;
+      font-size: 1.2em;
+    }
+    .score-options input[type="radio"]:checked + label {
+      font-weight: bold;
+      color: #032C82;
+    }
+    .results-panel {
+      grid-column: 2 / 3;
+      position: sticky;
+      top: 20px;
+      align-self: flex-start;
+    }
+    .battery-container {
+      width: 80px;
+      height: 160px;
+      border: 3px solid #002060;
+      border-radius: 10px;
+      position: relative;
+      margin: 20px auto 10px auto;
+      display: flex;
+      justify-content: center;
+      align-items: flex-end;
+      overflow: hidden;
+      box-shadow: inset 0 0 10px rgba(0,0,0,0.1);
+    }
+    .battery-container::before {
+      content: '';
+      width: 30px;
+      height: 8px;
+      background-color: #002060;
+      position: absolute;
+      top: -11px;
+      border-radius: 2px;
+    }
+    .battery-fill {
+      width: 100%;
+      height: 0%;
+      transition: height 0.5s ease-in-out, background-color 0.5s ease-in-out;
+      position: relative;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      font-weight: bold;
+      font-size: 1.2em;
+      text-shadow: 1px 1px 2px rgba(0,0,0,0.3);
+      color: white;
+    }
+    #deal-killer-warning {
+      color: #FF6000;
+      font-weight: bold;
+      margin-top: 15px;
+      display: none;
+    }
+  </style>
 </head>
 <body>
+  <div class="container">
+    <h1>CEC Bid Pursuit Scorecard</h1>
+    <div class="score-legend">
+      <h3>Legend</h3>
+      <p><strong>5:</strong> Strong competitive advantage</p>
+      <p><strong>4:</strong> Moderate competitive advantage</p>
+      <p><strong>3:</strong> Neutral (neither helps nor hurts)</p>
+      <p><strong>2:</strong> Moderate competitive disadvantage</p>
+      <p><strong>1:</strong> Serious competitive disadvantage</p>
+      <p><strong>Unk:</strong> Unknown</p>
+    </div>
 
-    <div class="main-content">
-        <div class="container">
-            <h1>CEC Bid Pursuit Scorecard</h1>
+    <form id="scorecardForm">
 
-            <div class="score-legend sticky-legend">
-                <h3>Legend</h3>
-                <p><strong>5:</strong> Strong competitive advantage</p>
-                <p><strong>4:</strong> Moderate competitive advantage</p>
-                <p><strong>3:</strong> Neutral (neither helps nor hurts)</p>
-                <p><strong>2:</strong> Moderate competitive disadvantage</p>
-                <p><strong>1:</strong> Serious competitive disadvantage</p>
-                <p><strong>Unk:</strong> Unknown</p>
-            </div>
+      <!-- Prospect Information (12 questions) -->
+      <section class="question-group" id="prospect-info">
+        <h2>Prospect Information (12 questions)</h2>
 
-            <form id="scorecardForm">
-                <h2>Prospect Information (12 questions)</h2>
-                <div class="question-group" id="prospect-info">
-                    <div class="question">
-                        <h3>1. Do we know (and can we influence) the key decision makers?</h3>
-                        <div class="score-options">
-                            <input type="radio" name="q1_score" value="5" required><label>5</label>
-                            <input type="radio" name="q1_score" value="4" required><label>4</label>
-                            <input type="radio" name="q1_score" value="3" required><label>3</label>
-                            <input type="radio" name="q1_score" value="2" required><label>2</label>
-                            <input type="radio" name="q1_score" value="1" required><label>1</label>
-                            <input type="radio" name="q1_score" value="0" required><label>Unk</label>
-                            <span class="deal-killer-checkbox">
-                                <input type="checkbox" name="q1_killer" value="yes"> Potential Deal Killer?
-                            </span>
-                        </div>
-                    </div>
+        <!-- Questions 1 to 12 -->
+        <!-- For brevity, example question 1 repeated for all questions with correct numbering and text -->
+        <div class="question">
+          <h3>1. Do we know (and can we influence) the key decision makers?</h3>
+          <div class="score-options">
+            <input type="radio" id="q1_score_5" name="q1_score" value="5" required /><label for="q1_score_5">5</label>
+            <input type="radio" id="q1_score_4" name="q1_score" value="4" /><label for="q1_score_4">4</label>
+            <input type="radio" id="q1_score_3" name="q1_score" value="3" /><label for="q1_score_3">3</label>
+            <input type="radio" id="q1_score_2" name="q1_score" value="2" /><label for="q1_score_2">2</label>
+            <input type="radio" id="q1_score_1" name="q1_score" value="1" /><label for="q1_score_1">1</label>
+            <input type="radio" id="q1_score_0" name="q1_score" value="0" /><label for="q1_score_0">Unk</label>
+            <span class="deal-killer-checkbox">
+              <input type="checkbox" id="q1_killer" name="q1_killer" value="yes" /><label for="q1_killer">Potential Deal Killer?</label>
+            </span>
+          </div>
+        </div>
                     <div class="question">
                         <h3>2. Is this opportunity aligned with the prospect's business strategy?</h3>
                         <div class="score-options">
@@ -271,10 +326,10 @@
                             </span>
                         </div>
                     </div>
-                </div>
-
-                <h2>Internal Information (15 questions)</h2>
-                <div class="question-group" id="internal-info">
+      </section>
+      <!-- Internal Information (15 questions) -->
+      <section class="question-group" id="internal-info">
+        <h2>Internal Information (15 questions)</h2>
                     <div class="question">
                         <h3>13. Is this opportunity in sync with our own strategic direction?</h3>
                         <div class="score-options">
@@ -485,10 +540,10 @@
                             </span>
                         </div>
                     </div>
-                </div>
-
-                <h2>Market/Competitive Information (8 questions)</h2>
-                <div class="question-group" id="market-info">
+      </section>
+      <!-- Market/Competitive Information (8 questions) -->
+      <section class="question-group" id="market-info">
+        <h2>Market/Competitive Information (8 questions)</h2>
                     <div class="question">
                         <h3>28. Do we know who the other competitive bidders are, if any?</h3>
                         <div class="score-options">
@@ -601,36 +656,111 @@
                             </span>
                         </div>
                     </div>
-                </div>
-            </form>
-        </div>
-    </div>
-    <div class="results-panel">
-        <div class="metrics-summary">
-            <h2>Scorecard Results</h2>
-            <p><strong>Overall:</strong></p>
-            <div class="battery-container">
-                <div class="battery-fill" id="battery-fill">
-                    <span class="percentage-text" id="pursuit-value-text">0%</span>
-                </div>
-            </div>
-            <p>Total Score: <span id="total-score">0</span> / 175</p>
-            <p>Potential Deal Killers: <span id="deal-killer-count">0</span> (<span id="deal-killer-risk-score">0%</span>)</p>
-            <div id="deal-killer-warning" style="display:none;">
-                <p>⚠️ **Warning:** At least one "Potential Deal Killer" has been identified. Proceed with caution.</p>
-            </div>
-            <hr style="border-top: 2px solid #0070C0; margin: 15px 0;">
-            <h3>Group Scores:</h3>
-            <p><strong>Prospect Info:</strong> <span id="prospect-score">0</span> / 60</p>
-            <p><strong>Internal Info:</strong> <span id="internal-score">0</span> / 75</p>
-            <p><strong>Market/Competitive Info:</strong> <span id="market-score">0</span> / 40</p>
-            <hr style="border-top: 2px solid #0070C0; margin: 15px 0;">
-            <p>Count of scores rated 1: <span id="score-1-count">0</span></p>
-            <p>Count of "Unk" ratings: <span id="unk-count">0</span></p>
-        </div>
-    </div>
+      </section>
+    </form>
+  </div>
 
-    <script src="cecbidpursuitcalc.js"></script>
+  <aside class="results-panel">
+    <div class="metrics-summary" role="region" aria-live="polite" aria-atomic="true">
+      <h2>Scorecard Results</h2>
+      <div class="battery-container" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" aria-label="Pursuit Value Meter">
+        <div id="battery-fill" class="battery-fill"><span id="pursuit-value-text">0%</span></div>
+      </div>
+      <p>Total Score: <span id="total-score">0</span> / 175</p>
+      <p>Potential Deal Killers: <span id="deal-killer-count">0</span> (<span id="deal-killer-risk-score">0%</span>)</p>
+      <div id="deal-killer-warning" role="alert" aria-live="assertive">Warning: At least one potential deal killer has been identified. Proceed with caution.</div>
+      <hr />
+      <h3>Group Scores:</h3>
+      <p><strong>Prospect Info:</strong> <span id="prospect-score">0</span> / 60</p>
+      <p><strong>Internal Info:</strong> <span id="internal-score">0</span> / 75</p>
+      <p><strong>Market/Competitive Info:</strong> <span id="market-score">0</span> / 40</p>
+      <hr />
+      <p>Count of scores rated 1: <span id="score-1-count">0</span></p>
+      <p>Count of "Unk" ratings: <span id="unk-count">0</span></p>
+    </div>
+  </aside>
 
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      const scorecardForm = document.getElementById('scorecardForm');
+      const totalQuestions = 35;
+      const maximumPossibleScore = totalQuestions * 5;
+      const totalPossibleDealKillers = totalQuestions;
+
+      const groups = {
+        'prospect-info': { questions: Array.from({ length: 12 }, (_, i) => `q${i + 1}`), maxScore: 12 * 5 },
+        'internal-info': { questions: Array.from({ length: 15 }, (_, i) => `q${i + 13}`), maxScore: 15 * 5 },
+        'market-info': { questions: Array.from({ length: 8 }, (_, i) => `q${i + 28}`), maxScore: 8 * 5 }
+      };
+
+      const batteryFill = document.getElementById('battery-fill');
+      const pursuitValueText = document.getElementById('pursuit-value-text');
+      const warningDiv = document.getElementById('deal-killer-warning');
+
+      function calculateMetrics() {
+        let totalScore = 0;
+        let scoresRated1 = 0;
+        let unkRatedCount = 0;
+        let dealKillerPresent = false;
+        let dealKillerCount = 0;
+        const groupScores = { 'prospect-info': 0, 'internal-info': 0, 'market-info': 0 };
+
+        for (const group in groups) {
+          groups[group].questions.forEach(q => {
+            const scoreElement = document.querySelector(`input[name="${q}_score"]:checked`);
+            const killerElement = document.querySelector(`input[name="${q}_killer"]`);
+
+            if (scoreElement) {
+              const scoreValue = parseInt(scoreElement.value, 10);
+              groupScores[group] += scoreValue;
+              totalScore += scoreValue;
+
+              if (scoreValue === 1) scoresRated1++;
+              if (scoreValue === 0) unkRatedCount++;
+            }
+
+            if (killerElement && killerElement.checked) {
+              dealKillerPresent = true;
+              dealKillerCount++;
+            }
+          });
+
+          document.getElementById(`${group.split('-')[0]}-score`).textContent = groupScores[group];
+        }
+
+        const pursuitValue = (totalScore / maximumPossibleScore) * 100;
+        const dealKillerRisk = (dealKillerCount / totalPossibleDealKillers) * 100;
+
+        document.getElementById('total-score').textContent = totalScore;
+        document.getElementById('score-1-count').textContent = scoresRated1;
+        document.getElementById('unk-count').textContent = unkRatedCount;
+        document.getElementById('deal-killer-count').textContent = dealKillerCount;
+        document.getElementById('deal-killer-risk-score').textContent = `${dealKillerRisk.toFixed(1)}%`;
+
+        warningDiv.style.display = dealKillerPresent ? 'block' : 'none';
+
+        batteryFill.style.height = `${pursuitValue}%`;
+
+        if (pursuitValue <= 25) {
+          batteryFill.style.backgroundColor = 'red';
+          pursuitValueText.style.color = 'white';
+        } else if (pursuitValue <= 50) {
+          batteryFill.style.backgroundColor = '#FFC107';
+          pursuitValueText.style.color = '#002060';
+        } else if (pursuitValue <= 75) {
+          batteryFill.style.backgroundColor = '#28a745';
+          pursuitValueText.style.color = 'white';
+        } else {
+          batteryFill.style.backgroundColor = '#0070C0';
+          pursuitValueText.style.color = 'white';
+        }
+
+        pursuitValueText.textContent = `${pursuitValue.toFixed(1)}%`;
+      }
+
+      scorecardForm.addEventListener('change', calculateMetrics);
+      calculateMetrics();
+    });
+  </script>
 </body>
 </html>
